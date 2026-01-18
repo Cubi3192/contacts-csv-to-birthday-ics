@@ -1,18 +1,47 @@
 import argparse
 import csv
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+import hashlib
 from pathlib import Path
 
 
-def parse_outlook_birthday(date_str: str) -> datetime | None:
+def ics_escape_text(value: str) -> str:
+    """
+    Escape TEXT values per RFC 5545:
+    - Backslash, semicolon, comma
+    - Newlines -> \n
+    """
+    value = value.replace("\\", "\\\\")
+    value = value.replace(";", r"\;")
+    value = value.replace(",", r"\,")
+    value = value.replace("\r\n", "\n").replace("\r", "\n").replace("\n", r"\n")
+    return value
+
+
+def make_stable_uid(*parts: str) -> str:
+    """
+    Create a stable UID from given parts (hash-based), safe for iCalendar.
+    """
+    raw = "\x1f".join(p.strip().lower() for p in parts if p is not None)
+    digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
+    return f"{digest}@outlook-birthday-import"
+
+
+def parse_birthday(date_str: str) -> date | None:
     """
     Outlook exportiert Geburtstage typischerweise als:
     - MM/DD/YYYY
     - YYYY-MM-DD
+    - DD.MM.YYYY
+    - DD/MM/YYYY
     """
-    for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
+    s = (date_str or "").strip()
+    if not s:
+        return None
+
+    for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y"):
         try:
-            return datetime.strptime(date_str, fmt)
+            return datetime.strptime(s, fmt).date()
         except ValueError:
             continue
     return None
@@ -36,7 +65,7 @@ def create_ics_from_csv(
                 if not birthday_raw:
                     continue
 
-                birthday = parse_outlook_birthday(birthday_raw)
+                birthday = parse_birthday(birthday_raw)
                 if not birthday:
                     continue
 
@@ -47,14 +76,18 @@ def create_ics_from_csv(
                 start_date = birthday.strftime("%Y%m%d")
                 end_date = (birthday + timedelta(days=1)).strftime("%Y%m%d")
 
-                uid = f"{start_date}-{first_name}{last_name}@outlook-import"
+                uid = make_stable_uid(start_date, first_name, last_name)
+
+                summary_escaped = ics_escape_text(
+                    f"{summary_prefix}{full_name}{summary_suffix}"
+                )
 
                 ics.write("BEGIN:VEVENT\n")
                 ics.write(f"UID:{uid}\n")
                 ics.write(f"DTSTART;VALUE=DATE:{start_date}\n")
                 ics.write(f"DTEND;VALUE=DATE:{end_date}\n")
                 ics.write("RRULE:FREQ=YEARLY\n")
-                ics.write(f"SUMMARY:{summary_prefix}{full_name}{summary_suffix}\n")
+                ics.write(f"SUMMARY:{summary_escaped}\n")
                 ics.write("TRANSP:TRANSPARENT\n")
                 ics.write("END:VEVENT\n")
 
