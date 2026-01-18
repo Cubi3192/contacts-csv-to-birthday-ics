@@ -76,8 +76,7 @@ This produce summaries such as:
 The input CSV file should contain the following columns:
 - `First Name`: First name
 - `Last Name`: Last name
-- `Birthday`: Birthday date (YYYY-MM-DD or MM/DD/YYYY format)
-
+- `Birthday`: Birthday date (YYYY-MM-DD or MM/DD/YYYY or DD.MM.YYYY or DD/MM/YYYY format)
 ## Output
 
 The script generates an ICS calendar file with birthday events that can be imported into:
