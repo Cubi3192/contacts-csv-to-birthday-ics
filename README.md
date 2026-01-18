@@ -1,6 +1,6 @@
-# Contacts CSV to ICS
+# Create Birthday Events (ICS) from Outlook Contacts CSV
 
-Convert contact information from CSV format to ICS (iCalendar) format for use in calendar applications.
+Convert Outlook contacts from CSV to ICS (iCalendar) by extracting birthdays and creating calendar events for them.
 
 ## Features
 
