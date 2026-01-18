@@ -29,7 +29,7 @@ def make_stable_uid(*parts: str) -> str:
 
 def parse_birthday(date_str: str) -> date | None:
     """
-    Outlook exportiert Geburtstage typischerweise als:
+    Parse birthday from string in one of the supported formats:
     - MM/DD/YYYY
     - YYYY-MM-DD
     - DD.MM.YYYY
@@ -50,7 +50,7 @@ def parse_birthday(date_str: str) -> date | None:
 def create_ics_from_csv(
     input_csv: Path,
     output_ics: Path,
-    summary_prefix: str = "Birthday:",
+    summary_prefix: str = "",
     summary_suffix: str = "",
 ) -> None:
     with open(output_ics, "w", encoding="utf-8") as ics:
